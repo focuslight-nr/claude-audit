@@ -2,7 +2,7 @@
 
 [日本語版 README はこちら / Japanese README](README_ja.md)
 
-A read-only CLI tool for macOS that audits local Claude Code / Claude Desktop
+A read-only CLI tool for macOS and Windows that audits local Claude Code / Claude Desktop
 configuration. It inspects MCP servers, hooks, permission settings, trusted
 projects, sensitive file permissions, and data retention, reporting findings
 at three severity levels: `WARN` / `REVIEW` / `INFO`.
@@ -35,6 +35,25 @@ common output schema and can be browsed and compared over time with
 | Runtime | Active sessions, related processes, LaunchAgents, crontab entries |
 
 ## Usage
+
+### Windows (PowerShell)
+
+```powershell
+.\claude_audit.ps1
+.\claude_audit.ps1 --summary
+.\claude_audit.ps1 --json
+.\claude_audit.ps1 --html
+.\claude_audit.ps1 --json --output snapshot.json
+.\claude_audit.ps1 --fail-on warn
+```
+
+If the execution policy blocks the script:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\claude_audit.ps1 --summary
+```
+
+### macOS
 
 ```sh
 ./claude_audit.sh                  # terminal report
@@ -93,9 +112,9 @@ multiple vendors can flow through the same pipeline.
 
 ## Requirements
 
-- macOS (exits on anything other than Darwin)
-- zsh (macOS default)
-- `jq` (recommended; without it, deep parsing of JSON settings is skipped) — `brew install jq`
+- Windows 10/11 with Windows PowerShell 5.1+ or PowerShell 7+
+- macOS with zsh (macOS default)
+- `jq` is recommended for the macOS version only
 
 ## Exit codes
 
