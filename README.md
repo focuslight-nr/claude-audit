@@ -22,17 +22,29 @@ common output schema and can be browsed and compared over time with
 
 ## What it audits
 
+Tracks the Claude Code **2.1.x** configuration surface.
+
 | Section | Contents |
 |---|---|
-| Config | `~/.claude.json` (model settings, permissions) |
-| Projects | Trusted projects (`hasTrustDialogAccepted`), pre-approved tools, per-project MCP |
-| MCP Servers | MCP servers from `settings.json` / `.mcp.json` / `claude_desktop_config.json`; WARN on command-capable runtimes (bash/python/node, etc.) |
-| Hooks | Hooks from all settings sources, with risk tags (network / destructive / git-write / sudo, etc.) |
-| Permissions | `bypassPermissionsGate` activation, allow/deny lists in settings |
-| Desktop | Cowork scheduled tasks, web search, HIPAA restriction settings |
-| Sensitive Files | Permission checks on auth files, `config.json`, `buddy-tokens.json`, etc. |
-| Retention | Size/count of sessions, shell-snapshots, projects, Cowork files |
-| Runtime | Active sessions, related processes, LaunchAgents, crontab entries |
+| Config | `~/.claude.json` — model, account/organization, machine ID, plugin & skill usage history |
+| Managed Policy | Enterprise settings at `/Library/Application Support/ClaudeCode/managed-settings.json`, the `managed-settings.d/` drop-in directory, and MDM managed preferences |
+| Projects | Trusted projects (`hasTrustDialogAccepted`), pre-approved tools, project-local MCP servers, CLAUDE.md external-include approval |
+| MCP Servers | Servers from `settings.json`, `.mcp.json`, per-project `.claude.json` entries, plugin `.mcp.json`, and `claude_desktop_config.json`; WARN on command-capable runtimes (bash/python/node, etc.) |
+| Hooks | All hook types — `command`, `http`, `mcp_tool`, `prompt`, `agent` — from every settings scope and plugin `hooks.json`, with risk tags (network, destructive, sudo, dynamic-code-execution, remote-endpoint, credential-header, async-background). Flags HTTP hooks with no `allowedHttpHookUrls` allowlist and unrecognized event names |
+| Plugins | Installed marketplace plugins, skills-directory plugins, and enabled-plugin declarations; provenance (Anthropic-published vs third-party) and the executable surface each one ships (`hooks`, `mcp`, `lsp`, `monitors`, `bin`, `agents`, `skills`) |
+| Monitors | Background monitor commands that plugins run unsandboxed for the whole session |
+| Skills / Agents | User, project, and plugin `SKILL.md` / agent / command definitions, including declared tool access |
+| Security Settings | Credential helpers (`apiKeyHelper`, `awsCredentialExport`, `awsAuthRefresh`), injected `env` keys, `sandbox.filesystem` / `sandbox.network` isolation, `permissions.defaultMode` / `additionalDirectories`, `statusLine`, marketplace controls, MCP allow/deny policy, `crossSessionInbound`, auto-mode rules, `cleanupPeriodDays`, and managed-only hardening switches |
+| Desktop | Cowork scheduled tasks, web search, HIPAA restriction, permission-gate bypass |
+| Sensitive Files | Permission checks on `~/.claude.json`, settings files, session peer-token keys (`sessions/*.key`), `.credentials.json` / login keychain, `config.json`, `buddy-tokens.json`, `ant-did` |
+| Retention | Size/count of sessions, shell-snapshots, projects, tasks, telemetry spool, plugin cache/data, Cowork files |
+| Runtime | Installed version, active sessions, background task records, related processes, LaunchAgents, crontab entries |
+
+Secrets are never read: only key names, file modes, and command strings are reported, and values matching token/password patterns are replaced with `[REDACTED]`.
+
+> **Platform parity:** the table above describes `claude_audit.sh` (v0.2.0).
+> `claude_audit.ps1` still implements the v0.1.0 check set and has not yet been
+> updated for plugins, the newer hook types, or the managed-policy checks.
 
 ## Usage
 
@@ -106,6 +118,7 @@ multiple vendors can flow through the same pipeline.
     { "severity": "WARN", "section": "Projects", "message": "...", "detail": "..." }
   ],
   "mcp_servers": [], "projects": [], "hooks": [],
+  "plugins": [], "skills": [], "monitors": [], "security_settings": [],
   "active_sessions": [], "sensitive_files": [], "retention": []
 }
 ```

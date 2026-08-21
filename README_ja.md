@@ -18,17 +18,29 @@ MCP サーバ・hooks・権限設定・信頼済みプロジェクト・機密�
 
 ## 監査対象
 
+Claude Code **2.1.x** の設定スキーマに対応しています。
+
 | セクション | 内容 |
 |---|---|
-| Config | `~/.claude.json`（モデル設定・パーミッション） |
-| Projects | 信頼済みプロジェクト（`hasTrustDialogAccepted`）・事前許可ツール・プロジェクト別 MCP |
-| MCP Servers | `settings.json` / `.mcp.json` / `claude_desktop_config.json` の MCP サーバ。コマンド実行可能なランタイム（bash/python/node 等）を WARN 検出 |
-| Hooks | 全設定ソースのフック。network / destructive / git-write / sudo 等のリスクタグ付け |
-| Permissions | `bypassPermissionsGate` の有効化、settings の allow/deny リスト |
-| Desktop | Cowork スケジュールタスク・Web 検索・HIPAA 制限の設定 |
-| Sensitive Files | `auth` 系・`config.json`・`buddy-tokens.json` 等のパーミッション点検 |
-| Retention | sessions / shell-snapshots / projects / Cowork ファイルのサイズ・件数 |
-| Runtime | アクティブセッション・関連プロセス・LaunchAgent・crontab エントリ |
+| Config | `~/.claude.json` — モデル・アカウント/組織・マシンID・プラグイン/スキルの利用履歴 |
+| Managed Policy | エンタープライズ設定（`/Library/Application Support/ClaudeCode/managed-settings.json`、`managed-settings.d/` ドロップイン、MDM 管理環境設定） |
+| Projects | 信頼済みプロジェクト（`hasTrustDialogAccepted`）・事前許可ツール・プロジェクト固有 MCP サーバ・CLAUDE.md 外部インクルードの承認状態 |
+| MCP Servers | `settings.json` / `.mcp.json` / `.claude.json` のプロジェクト単位定義 / プラグイン同梱 `.mcp.json` / `claude_desktop_config.json`。コマンド実行可能なランタイム（bash/python/node 等）を WARN 検出 |
+| Hooks | 全5種類のフック型（`command` / `http` / `mcp_tool` / `prompt` / `agent`）を全設定スコープとプラグイン `hooks.json` から抽出。network / destructive / sudo / dynamic-code-execution / remote-endpoint / credential-header / async-background のリスクタグ付け。`allowedHttpHookUrls` 未設定の HTTP フックや未知のイベント名も検出 |
+| Plugins | マーケットプレイス経由のインストール済みプラグイン、skills ディレクトリ型プラグイン、有効化宣言。提供元（Anthropic 公式 / サードパーティ）と同梱される実行面（`hooks`・`mcp`・`lsp`・`monitors`・`bin`・`agents`・`skills`）を判定 |
+| Monitors | プラグインがセッション中ずっとサンドボックス外で実行するバックグラウンド監視コマンド |
+| Skills / Agents | ユーザー・プロジェクト・プラグインの `SKILL.md` / エージェント / コマンド定義と、宣言されたツール権限 |
+| Security Settings | 資格情報ヘルパー（`apiKeyHelper`・`awsCredentialExport`・`awsAuthRefresh`）、注入される `env` のキー、`sandbox.filesystem` / `sandbox.network` の分離設定、`permissions.defaultMode` / `additionalDirectories`、`statusLine`、マーケットプレイス制御、MCP の allow/deny ポリシー、`crossSessionInbound`、auto-mode ルール、`cleanupPeriodDays`、managed 専用のハードニング設定 |
+| Desktop | Cowork スケジュールタスク・Web 検索・HIPAA 制限・権限ゲートのバイパス |
+| Sensitive Files | `~/.claude.json`・各 settings・セッション peer-token 鍵（`sessions/*.key`）・`.credentials.json` / ログインキーチェーン・`config.json`・`buddy-tokens.json`・`ant-did` のパーミッション点検 |
+| Retention | sessions / shell-snapshots / projects / tasks / telemetry / プラグインキャッシュ / Cowork ファイルのサイズ・件数 |
+| Runtime | インストール済みバージョン・アクティブセッション・バックグラウンドタスク記録・関連プロセス・LaunchAgent・crontab エントリ |
+
+シークレットの値は読み取りません。報告するのはキー名・ファイルモード・コマンド文字列のみで、token/password 等のパターンに一致する値は `[REDACTED]` に置換されます。
+
+> **プラットフォーム間の差異:** 上記の表は `claude_audit.sh`（v0.2.0）の内容です。
+> `claude_audit.ps1` は v0.1.0 の検査項目のままで、プラグイン・新しいフック型・
+> managed policy の各チェックはまだ移植されていません。
 
 ## 使い方
 
@@ -101,6 +113,7 @@ codex-audit と同一のトップレベル構造を採用しており、複数�
     { "severity": "WARN", "section": "Projects", "message": "...", "detail": "..." }
   ],
   "mcp_servers": [], "projects": [], "hooks": [],
+  "plugins": [], "skills": [], "monitors": [], "security_settings": [],
   "active_sessions": [], "sensitive_files": [], "retention": []
 }
 ```
