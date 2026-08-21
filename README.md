@@ -16,7 +16,7 @@ common output schema and can be browsed and compared over time with
 ## Features
 
 - **Read-only** — never modifies or deletes any configuration
-- **Minimal dependencies** — zsh + standard macOS commands (`jq` recommended for deep JSON parsing)
+- **Minimal dependencies** — zsh + standard macOS commands (`jq` recommended for deep JSON parsing), or Windows PowerShell 5.1+ / PowerShell 7+ with no extra modules
 - **Automatic secret redaction** — values matching token / api_key / password patterns become `[REDACTED]`
 - **CI friendly** — `--fail-on warn|review` signals findings via exit codes
 
@@ -27,7 +27,7 @@ Tracks the Claude Code **2.1.x** configuration surface.
 | Section | Contents |
 |---|---|
 | Config | `~/.claude.json` — model, account/organization, machine ID, plugin & skill usage history |
-| Managed Policy | Enterprise settings at `/Library/Application Support/ClaudeCode/managed-settings.json`, the `managed-settings.d/` drop-in directory, and MDM managed preferences |
+| Managed Policy | Enterprise settings — macOS: `/Library/Application Support/ClaudeCode/managed-settings.json`, the `managed-settings.d/` drop-in directory, and MDM managed preferences; Windows: `%ProgramFiles%\ClaudeCode\managed-settings.json`, `managed-settings.d\`, and the `HKLM`/`HKCU` `SOFTWARE\Policies\ClaudeCode` registry keys |
 | Projects | Trusted projects (`hasTrustDialogAccepted`), pre-approved tools, project-local MCP servers, CLAUDE.md external-include approval |
 | MCP Servers | Servers from `settings.json`, `.mcp.json`, per-project `.claude.json` entries, plugin `.mcp.json`, and `claude_desktop_config.json`; WARN on command-capable runtimes (bash/python/node, etc.) |
 | Hooks | All hook types — `command`, `http`, `mcp_tool`, `prompt`, `agent` — from every settings scope and plugin `hooks.json`, with risk tags (network, destructive, sudo, dynamic-code-execution, remote-endpoint, credential-header, async-background). Flags HTTP hooks with no `allowedHttpHookUrls` allowlist and unrecognized event names |
@@ -36,15 +36,16 @@ Tracks the Claude Code **2.1.x** configuration surface.
 | Skills / Agents | User, project, and plugin `SKILL.md` / agent / command definitions, including declared tool access |
 | Security Settings | Credential helpers (`apiKeyHelper`, `awsCredentialExport`, `awsAuthRefresh`), injected `env` keys, `sandbox.filesystem` / `sandbox.network` isolation, `permissions.defaultMode` / `additionalDirectories`, `statusLine`, marketplace controls, MCP allow/deny policy, `crossSessionInbound`, auto-mode rules, `cleanupPeriodDays`, and managed-only hardening switches |
 | Desktop | Cowork scheduled tasks, web search, HIPAA restriction, permission-gate bypass |
-| Sensitive Files | Permission checks on `~/.claude.json`, settings files, session peer-token keys (`sessions/*.key`), `.credentials.json` / login keychain, `config.json`, `buddy-tokens.json`, `ant-did` |
+| Sensitive Files | Permission checks (file mode on macOS, ACL on Windows) on `~/.claude.json`, settings files, session peer-token keys (`sessions/*.key`), `.credentials.json` / login keychain, `config.json`, `buddy-tokens.json`, `ant-did` |
 | Retention | Size/count of sessions, shell-snapshots, projects, tasks, telemetry spool, plugin cache/data, Cowork files |
-| Runtime | Installed version, active sessions, background task records, related processes, LaunchAgents, crontab entries |
+| Runtime | Installed version, active sessions, background task records, related processes; LaunchAgents and crontab entries on macOS, scheduled tasks and `Run` registry autostart entries on Windows |
 
 Secrets are never read: only key names, file modes, and command strings are reported, and values matching token/password patterns are replaced with `[REDACTED]`.
 
-> **Platform parity:** the table above describes `claude_audit.sh` (v0.2.0).
-> `claude_audit.ps1` still implements the v0.1.0 check set and has not yet been
-> updated for plugins, the newer hook types, or the managed-policy checks.
+> **Platform parity:** `claude_audit.sh` and `claude_audit.ps1` (both v0.2.0) implement
+> the same check set and emit the same JSON schema. Platform-specific details differ where
+> the operating systems do: file modes vs. Windows ACLs, LaunchAgents/crontab vs. scheduled
+> tasks and `Run` registry keys, and the managed-policy delivery paths listed below.
 
 ## Usage
 

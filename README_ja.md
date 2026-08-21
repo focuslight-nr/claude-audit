@@ -12,7 +12,7 @@ MCP サーバ・hooks・権限設定・信頼済みプロジェクト・機密�
 ## 特徴
 
 - **読み取り専用** — 設定の変更・削除は一切行いません
-- **依存最小** — zsh + macOS 標準コマンドのみで動作（JSON の深掘り解析には `jq` を推奨）
+- **依存最小** — zsh + macOS 標準コマンドのみで動作（JSON の深掘り解析には `jq` を推奨）。Windows は Windows PowerShell 5.1 以降 / PowerShell 7 以降のみで追加モジュール不要
 - **シークレットの自動マスク** — token / api_key / password 等にマッチする値は `[REDACTED]` 化
 - **CI 連携** — `--fail-on warn|review` で終了コードによる検知が可能
 
@@ -23,7 +23,7 @@ Claude Code **2.1.x** の設定スキーマに対応しています。
 | セクション | 内容 |
 |---|---|
 | Config | `~/.claude.json` — モデル・アカウント/組織・マシンID・プラグイン/スキルの利用履歴 |
-| Managed Policy | エンタープライズ設定（`/Library/Application Support/ClaudeCode/managed-settings.json`、`managed-settings.d/` ドロップイン、MDM 管理環境設定） |
+| Managed Policy | エンタープライズ設定。macOS: `/Library/Application Support/ClaudeCode/managed-settings.json`、`managed-settings.d/` ドロップイン、MDM 管理環境設定。Windows: `%ProgramFiles%\ClaudeCode\managed-settings.json`、`managed-settings.d\`、`HKLM` / `HKCU` の `SOFTWARE\Policies\ClaudeCode` レジストリキー |
 | Projects | 信頼済みプロジェクト（`hasTrustDialogAccepted`）・事前許可ツール・プロジェクト固有 MCP サーバ・CLAUDE.md 外部インクルードの承認状態 |
 | MCP Servers | `settings.json` / `.mcp.json` / `.claude.json` のプロジェクト単位定義 / プラグイン同梱 `.mcp.json` / `claude_desktop_config.json`。コマンド実行可能なランタイム（bash/python/node 等）を WARN 検出 |
 | Hooks | 全5種類のフック型（`command` / `http` / `mcp_tool` / `prompt` / `agent`）を全設定スコープとプラグイン `hooks.json` から抽出。network / destructive / sudo / dynamic-code-execution / remote-endpoint / credential-header / async-background のリスクタグ付け。`allowedHttpHookUrls` 未設定の HTTP フックや未知のイベント名も検出 |
@@ -32,15 +32,16 @@ Claude Code **2.1.x** の設定スキーマに対応しています。
 | Skills / Agents | ユーザー・プロジェクト・プラグインの `SKILL.md` / エージェント / コマンド定義と、宣言されたツール権限 |
 | Security Settings | 資格情報ヘルパー（`apiKeyHelper`・`awsCredentialExport`・`awsAuthRefresh`）、注入される `env` のキー、`sandbox.filesystem` / `sandbox.network` の分離設定、`permissions.defaultMode` / `additionalDirectories`、`statusLine`、マーケットプレイス制御、MCP の allow/deny ポリシー、`crossSessionInbound`、auto-mode ルール、`cleanupPeriodDays`、managed 専用のハードニング設定 |
 | Desktop | Cowork スケジュールタスク・Web 検索・HIPAA 制限・権限ゲートのバイパス |
-| Sensitive Files | `~/.claude.json`・各 settings・セッション peer-token 鍵（`sessions/*.key`）・`.credentials.json` / ログインキーチェーン・`config.json`・`buddy-tokens.json`・`ant-did` のパーミッション点検 |
+| Sensitive Files | `~/.claude.json`・各 settings・セッション peer-token 鍵（`sessions/*.key`）・`.credentials.json` / ログインキーチェーン・`config.json`・`buddy-tokens.json`・`ant-did` のパーミッション点検（macOS はファイルモード、Windows は ACL） |
 | Retention | sessions / shell-snapshots / projects / tasks / telemetry / プラグインキャッシュ / Cowork ファイルのサイズ・件数 |
-| Runtime | インストール済みバージョン・アクティブセッション・バックグラウンドタスク記録・関連プロセス・LaunchAgent・crontab エントリ |
+| Runtime | インストール済みバージョン・アクティブセッション・バックグラウンドタスク記録・関連プロセス。macOS は LaunchAgent と crontab、Windows はタスクスケジューラと `Run` レジストリの自動起動エントリ |
 
 シークレットの値は読み取りません。報告するのはキー名・ファイルモード・コマンド文字列のみで、token/password 等のパターンに一致する値は `[REDACTED]` に置換されます。
 
-> **プラットフォーム間の差異:** 上記の表は `claude_audit.sh`（v0.2.0）の内容です。
-> `claude_audit.ps1` は v0.1.0 の検査項目のままで、プラグイン・新しいフック型・
-> managed policy の各チェックはまだ移植されていません。
+> **プラットフォーム間の差異:** `claude_audit.sh` と `claude_audit.ps1`（ともに v0.2.0）は
+> 同じ検査項目を実装し、同一の JSON スキーマを出力します。OS 固有の部分のみ異なります
+> （ファイルモード / Windows ACL、LaunchAgent・crontab / タスクスケジューラ・`Run` レジストリ、
+> および managed policy の配置パス）。
 
 ## 使い方
 
